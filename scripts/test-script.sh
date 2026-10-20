@@ -3,20 +3,22 @@
 set -e
 
 variant=${1:-${VARIANT}}
-service=${2:-${SERVICE_NAME}}
-port=${3:-${PORT_NUMBER}}
+deployment=${2:-${DEPLOYMENT_NAME}}
+namespace=${3:-${NAMESPACE}}
+
+[[ -z $namespace ]] && namespace="default"
 
 path=$(dirname "$0")
 
 timed() {
   end=$(date +%s)
-  dt=$(("$end" - $1))
-  dd=$(("$dt" / 86400))
-  dt2=$(("$dt" - 86400 * "$dd"))
-  dh=$(("$dt2" / 3600))
-  dt3=$(("$dt2" - 3600 * "$dh"))
-  dm=$(("$dt3" / 60))
-  ds=$(("$dt3" - 60 * "$dm"))
+  dt=$(($end - $1))
+  dd=$(($dt / 86400))
+  dt2=$(($dt - 86400 * $dd))
+  dh=$(($dt2 / 3600))
+  dt3=$(($dt2 - 3600 * $dh))
+  dm=$(($dt3 / 60))
+  ds=$(($dt3 - 60 * $dm))
 
   LC_NUMERIC=C printf "\nTotal runtime: %02d min %02d seconds\n" "$dm" "$ds"
 }
@@ -32,14 +34,11 @@ success() {
 
 step() {
   local step=$1
-  [[ $((step % 2)) -eq 0 ]] && operation="start" || operation="stop"
+  [[ $((step % 2)) -eq 0 ]] && replicas=1 || replicas=0
 
-  printf "=== Step %d: %s %s ===\n" "$step" "$operation" "$service"
+  printf "=== Step %d: scale %s to %s ===\n" "$step" "$deployment" "$replicas"
 
-  docker compose "$operation" "$service"
-  if [[ "$operation" == "start" ]]; then
-    "$path"/wait-for.sh -t 120 "http://localhost:$port/manage/health" -- echo "Host localhost:$port is active"
-  fi
+  kubectl scale deployment "$deployment" -n "$namespace" --replicas "$replicas" 
 
   newman run \
     --delay-request=100 \

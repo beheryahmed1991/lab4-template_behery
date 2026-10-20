@@ -1,13 +1,13 @@
 {
   "tests": [
     {
-      "name": "Run Postman",
+      "name": "Run Test Script",
       "setup": "",
-      "run": "newman run --delay-request=100 --folder=success --environment v2/postman/environment.json v2/postman/collection.json",
+      "run": "./scripts/test-script.sh v2 loyalty-service lab4",
       "input": "",
       "output": "",
       "comparison": "included",
-      "timeout": 10,
+      "timeout": 60,
       "points": 10
     }
   ]
